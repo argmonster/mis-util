@@ -7,9 +7,13 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
-     "type": "git",
-     "url": "http://github.com/argmonster/mis-util"
+    "type": "git",
+    "url": "http://github.com/argmonster/mis-util"
   },
   "author": "Tim Markello",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "lodash": "^3.5.0",
+    "q": "^1.2.0"
+  }
 }
