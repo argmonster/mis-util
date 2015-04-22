@@ -1,69 +1,82 @@
 var fs = require('fs');
 var Q = require('q');
+var _ = require('lodash');
 
 var add_line = require('./add_line.js');
 var process_parm_values = require('./process_parm_values.js');
 var json_obj_to_arr = require('./json_obj_to_arr.js');
 
 var readfile = Q.nfbind(fs.readFile);
+var writefile = Q.nfbind(fs.writeFile);
+var readdir = Q.nfbind(fs.readdir);
 
-var Parm = function Parm(options) {
-   this.settings = options;
-   this.parm = [];
+var defaults = {
+   parm_extension: '.parm'
 };
 
-Parm.prototype = {
-   addline: function addline(name, value) {
-      this.parm.push(add_line(name, value));
-      return this;
-   },
-   fromfile: function fromfile(path) {
-      var self = this;
-      var dfd = Q.defer();
-      readfile(path, 'utf-8').then(function(data) { 
-         self.parm = data.split(/\n\r?/m).map(function(line) {
-            if (line.substr(0,1) === '*') {
-               return add_line(line);
-            }
-            var l = line.split(' ');
-            return add_line(l.shift(), l.join(' '));
-         });
-         dfd.resolve(self);
-      });
-      return dfd.promise;
-   },
-   fromjson: function fromjson(json) {
+var settings = {};
 
-      this.parm = this.parm.concat.apply(
-         this.parm, 
-         json_obj_to_arr(json).map(function(value) {
-               return process_parm_values(value.key, value.val);
+var mapjson = function mapjson(json) {
+   return Array.prototype.concat.apply([], json_obj_to_arr(json).map(function(value) {
+      return process_parm_values(value.key, value.val);
+   }));
+};
+
+var Parm = function Parm(options) {
+   settings = _.merge(defaults, options);
+
+   return {
+      fromflatfile: function fromfile(path) {
+         var self = this;
+         return readfile(path, 'utf-8').then(function(data) { 
+            return Q(data.split(/\n\r?/m).map(function(line) {
+               if (line.substr(0,1) === '*') {
+                  return add_line(line);
+               }
+               var l = line.split(' ');
+               return add_line(l.shift(), l.join(' '));
+            }));
+         });
+      },
+      fromjsonfile: function fromjsonfile(path) {
+         return readfile(path, 'utf-8')
+         .then(function(data) {
+            return Q(mapjson(JSON.parse(data)));
+         });
+      },
+      tofile: function tofile(path, data) {
+         return writefile(path, data.join(''))
+         .then(function() {
+            console.log('Parm written to: ', path);
          })
-      );
-      return this;
-   },
-   tofile: function tofile(path) {
-      return "Not Implemented Yet";
-   },
-   tojson: function tojson() {
-      if (!this.parm) {
-         return [];
+         .fail(function(err) {
+            console.log('Parm file write error:', err);
+         });
+      },
+      fromjsondir: function fromjsondir(dir) {
+         var self = this;
+         return readdir(dir)
+         .then(function(list) {
+            return Q.all(list.map(function(name) {
+               return self.fromjsonfile(dir + name)
+               .then(function(data) {
+                  return {
+                     name: name.substr(0, name.lastIndexOf('.')),
+                     data: data //self.fromjsonfile(dir + name)
+                  };
+               });
+            }));
+         })
+      },
+      todir: function todir(dir, list) {
+         var self = this;
+         return Q(list.map(function(file) {
+            return self.tofile(dir + file.name + settings.parm_extension, 
+               file.data);
+         }));
       }
-      console.log(this.parm);
-      return this.parm .map(function(line) {
-         line = line.replace(/ *$/, '');
-         if (line.substr(0,1) === '*') {
-            return {key: line, value: ''};
-         }
-         var l = line.split(' ');
-         var key = l.shift();
-         if (key.indexOf('-') > -1) {
-            var a = key.split('-');
-            return {key: a[0], x: a[1], y: a[2], value: l.join(' ')}
-         }
-         return {key: key, value: l.join(' ')};
-      });
-   }
+   };
+
 };
 
 module.exports = Parm;
