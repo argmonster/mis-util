@@ -32,6 +32,7 @@ mis.deploy.usc()
 ### Options and default settings
 
 name|default value
+-----|------------
 sysname|/c1/FRSH
 usc_path.local|./usc|
 usc_path.remote|/SCRIPT/S
