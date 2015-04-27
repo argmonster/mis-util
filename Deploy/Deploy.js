@@ -11,8 +11,8 @@ var defaults = {
    view_extension: 'uhp|html|htm',
    parm_extension: 'parm',
    connect: {
-      host: 'gccmhc',
-      user: 'tim'
+      //host: 'hostname',
+      //user: 'username'
    }
 };
 
