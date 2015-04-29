@@ -111,7 +111,7 @@ Mis_ftp.prototype = {
       return dfd.promise;
    },
 
-   push_dir : function(local, remote, extension) {
+   push_dir : function(local, remote, extension, keepextension) {
 
       var dfd = Q.defer();
 
@@ -126,7 +126,8 @@ Mis_ftp.prototype = {
       .then(function(conn) {
          f = conn;
          return Q.all(list.map(function(file) {
-            return put(f, local + file, remote, removeExtension(file));
+            file = keepextension ? file : removeExtension(file);
+            return put(f, local + file, remote, file);
          }));
          
       })
