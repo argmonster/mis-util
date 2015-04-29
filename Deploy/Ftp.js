@@ -132,7 +132,7 @@ Mis_ftp.prototype = {
       })
       .then(function() {
          console.log('done', local);
-         dfd.resolve();
+         dfd.resolve(list.map(function(file) {return removeExtension(file);}));
       })
       .finally(function() {
          console.log('close',local);
