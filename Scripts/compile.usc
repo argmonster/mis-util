@@ -1,0 +1,11 @@
+start compile(script)
+script is x
+
+err[]    is x
+stat[]   is x
+rc       is b
+
+rc = $compile(script, err[], stat[])
+
+'do something with err and stat?
+end compile
