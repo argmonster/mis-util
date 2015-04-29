@@ -48,9 +48,8 @@ var put_script_parm = function put_script_parm(conn, sysname, parmpath, script) 
    return dfd.promise;
 };
 
-var rm_script_parm = function rm_script_parm(conn, sysname, parmpath, script) {
-   var cmd = "rm " + sysname + parmpath + 
-      "/C" + script.name.substr(0,7).toUpperCase(); 
+var rm_script_parm = function rm_script_parm(conn, sysname, parmpath, parmname) {
+   var cmd = "rm " + sysname + parmpath + "/" + parmname;
    return execute(conn, cmd);
 };
 
@@ -92,7 +91,10 @@ module.exports = {
             return put_script_parm(conn, sysname, parmpath, scriptobj)
             .then(function(parm) {
                console.log('execute parm ', parm);
-               return exec_uscript(conn, sysname, user, pass, parm);
+               return exec_uscript(conn, sysname, user, pass, parm)
+               .then(function(conn) {
+                  return rm_script_parm(conn, sysname, parmpath, parm);
+               });
             });
          });
       })
