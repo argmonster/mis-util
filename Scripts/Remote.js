@@ -36,10 +36,10 @@ var put_script_parm = function put_script_parm(conn, sysname, parmpath, script) 
       script.args ? [script.args] : [];
    var parmline = "SCRIPT " + script.name + " (" + script.args.join(',') + ")";
    console.log(parmline);
-   var parmname = "C" + script.name.substr(0,7).toUpperCase(); 
+   var parmname = "MU" + (Math.floor(Math.random() * 900000) + 100000); 
    var fullpath = sysname + parmpath + "/" + parmname;
    console.log(fullpath);
-   var parmcmd = "echo \"" + parmline + "\" > " + parmname;
+   var parmcmd = "echo \"" + parmline + "\" > " + fullpath;
    console.log(parmcmd);
    execute(conn, parmcmd)
    .then(function() { 
