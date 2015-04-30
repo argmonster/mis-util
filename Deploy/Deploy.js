@@ -44,7 +44,7 @@ module.exports = function(options) {
          ftp,
          settings.js_path.local,
          settings.webname + 
-            settings.sysname.replace('/', '') + 
+            settings.sysname.replace(/\//g, '') + 
             settings.js_path.remote,
          settings.js_extension,
          true
@@ -53,9 +53,18 @@ module.exports = function(options) {
          ftp,
          settings.css_path.local,
          settings.webname + 
-            settings.sysname.replace('/', '') + 
+            settings.sysname.replace(/\//g, '') + 
             settings.css_path.remote,
          settings.css_extension,
+         true
+      ),
+      img: ftp.push_dir.bind(
+         ftp,
+         settings.img_path.local,
+         settings.webname + 
+            settings.sysname.replace(/\//g, '') + 
+            settings.img_path.remote,
+         settings.img_extension,
          true
       )
    };
