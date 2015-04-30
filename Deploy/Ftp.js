@@ -126,8 +126,8 @@ Mis_ftp.prototype = {
       .then(function(conn) {
          f = conn;
          return Q.all(list.map(function(file) {
-            file = keepextension ? file : removeExtension(file);
-            return put(f, local + file, remote, file);
+            var r_file = keepextension ? file : removeExtension(file);
+            return put(f, local + file, remote, r_file);
          }));
          
       })
