@@ -32,14 +32,14 @@ module.exports = function(options) {
          ftp, 
          settings.view_path.local, 
          settings.sysname + settings.view_path.remote, 
-         settings.view_extension
+         settings.view_extension,
+         true
       ),
       parm: ftp.push_dir.bind(
          ftp, 
          settings.parm_path.local, 
          settings.sysname + settings.parm_path.remote, 
-         settings.parm_extension,
-         true
+         settings.parm_extension
       ),
       js: ftp.push_dir.bind(
          ftp,
