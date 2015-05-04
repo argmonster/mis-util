@@ -96,7 +96,7 @@ Mis_ftp.prototype = {
       })
       .then(function() {
          console.log('done ', filename);
-         dfd.resolve();
+         dfd.resolve(filename);
       })
       .fail(function(err) { 
          console.log('fail ', filename, err);
