@@ -38,7 +38,8 @@ module.exports = function(options) {
          ftp, 
          settings.parm_path.local, 
          settings.sysname + settings.parm_path.remote, 
-         settings.parm_extension
+         settings.parm_extension,
+         true
       ),
       js: ftp.push_dir.bind(
          ftp,
