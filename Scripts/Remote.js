@@ -62,7 +62,7 @@ var exec_uscript = function exec_uscript(conn, sysname, cronuser, cronpass, parm
       parm,
       cronuser,
       cronpass,
-      '&'
+      //'&'
    ].join(' ');
    console.log(cmd);
    return execute(conn, cmd);
