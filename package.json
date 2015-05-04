@@ -1,6 +1,6 @@
 {
   "name": "mis-util",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A utility for generating and deploying files to a cmhc/mis server",
   "main": "index.js",
   "repository": {
