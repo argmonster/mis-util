@@ -22,6 +22,7 @@ var defaults = {
 module.exports = function mis(options) {
    var settings = _.merge(defaults, options);
    return {
+      settings: settings,
       deploy: Deploy(settings),
       parm: Parm(),
       script: Script(settings)
