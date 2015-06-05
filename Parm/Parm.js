@@ -41,7 +41,11 @@ var Parm = function Parm(options) {
       fromjsonfile: function fromjsonfile(path) {
          return readfile(path, 'utf-8')
          .then(function(data) {
-            return Q(mapjson(JSON.parse(data)));
+            try {
+               return Q(mapjson(JSON.parse(data)));
+            } catch(e) {
+               return Q.reject(e);
+            }
          });
       },
       tofile: function tofile(path, data) {
@@ -70,7 +74,9 @@ var Parm = function Parm(options) {
       },
       todir: function todir(dir, list) {
          var self = this;
+         console.log('todir');
          return Q(list.map(function(file) {
+            console.log(dir, file);
             return self.tofile(dir + file.name + settings.parm_extension, 
                file.data);
          }));
