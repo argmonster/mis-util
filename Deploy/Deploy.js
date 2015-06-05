@@ -22,6 +22,9 @@ module.exports = function(options) {
    var ftp = new Ftp(settings);
 
    return {
+      file: ftp.push.bind(
+         ftp
+      ),
       usc: ftp.push_dir.bind(
          ftp, 
          settings.usc_path.local, 
