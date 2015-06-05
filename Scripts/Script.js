@@ -27,8 +27,21 @@ module.exports = function(options) {
             settings.cron.pass, 
             scripts.map(function(script) {
                return {name: 'compile', args: [script]};
-            })
-         );
+            }))
+            .then(function(conn) {
+               console.log('COMPILED CHECKING RESULTS');
+               console.log(scripts);
+               scripts.forEach(function(script) {
+                  var path = settings.sysname + '/W/' + script + '.log';
+                  var cmd = 'grep ERRLINE ' + path;
+                  remote.execute(settings.connect, cmd)
+                  .then(function(conn) {
+                     cmd = 'rm ' + path
+                     return remote.execute(settings.connect, cmd);
+                  });
+               });
+            });
+         //);
       },
       import: {
          dst: function(dstfile) {

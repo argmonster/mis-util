@@ -21,8 +21,13 @@ var execute = function execute(conn, cmd) {
    var dfd = Q.defer();
    console.log('executing ' + cmd);
    conn.exec(cmd, function(err, stdout) {
-      if (err) { return Q.reject(err); }
-      stdout.on('close', function() {
+      if (err) { 
+         close(conn);
+         return Q.reject(err); 
+      }
+      stdout.on('data', function(data) {
+         console.log(cmd + ": " + data);
+      }).on('close', function() {
          dfd.resolve(conn);
       });
    });
@@ -78,6 +83,9 @@ module.exports = {
       .then(function(conn) {
          return execute(conn, cmd);
       })
+      .fail(function(error) { 
+         console.log(error);
+      })
       .then(function(conn) {
          return close(conn);
       })
@@ -92,9 +100,9 @@ module.exports = {
             .then(function(parm) {
                console.log('execute parm ', parm);
                return exec_uscript(conn, sysname, user, pass, parm)
-               .then(function(conn) {
-                  return rm_script_parm(conn, sysname, parmpath, parm);
-               });
+            .then(function(conn) {
+               return rm_script_parm(conn, sysname, parmpath, parm);
+            });
             });
          });
       })

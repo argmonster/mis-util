@@ -5,7 +5,15 @@ err[]    is x
 stat[]   is x
 rc       is b
 
+path     is x
+log      is x
+
 rc = $compile(script, err[], stat[])
 
-'do something with err and stat?
+path = $sysname + "/W/" + script + ".log"
+if err[] dp then
+   stat[] = err[]
+endif
+(void)$putfile(stat[], path)
+
 end compile
