@@ -1,0 +1,299 @@
+start import-dsts(filename)
+' program arguments
+filename	is alpha	' Name of CSV file with DSTs
+' Format
+'	System		- Flag for System DST (Do not Create)
+'	DSTNo		- DST Number to use
+'	ShortName	- DST Short Name
+'	Description	- DST Long Description
+'	Sensitivity	- DST Sensitivity Level
+'	DBNo		- Logical Database Number
+'	Type		- DST Type (X/B/N/D/T/R)
+'	Edit		- DST Edit Number
+'	Length		- DST Length
+'	Table		- DCT Edit table number
+'	Record		- Record Number
+'	Picture		- Numeric Picture (Left dot right)
+'	Recode		- Recode Table Name
+'	Alternate	- Alternate Index number (1-3)
+'
+' Local Variables
+dstFile		is binary	' File Handle Number
+dstLine		is alpha	' One line from the file w/ DST Info
+retCode		is binary	' Function return codes
+info[]		is alpha	' DST Information Array
+Errors[]	is alpha	' Error Array
+errorMsg	is alpha	' One error message
+i		is binary	' Loop/Index counter
+	' Counters
+dstsAdded	is binary	' Number of DSTs added
+dstsSkipped	is binary	' Number of DSTs Skipped
+dstsWithErrors	is binary	' Number of DSTs w/ errors
+dstAssigned	is binary	' DST Number created
+	' Report Variables
+reportNbr	is binary	' Report Handle
+reportTitle	is alpha	' Report Title
+reportHdrs[]	is alpha	' Report Header lines
+reportFormat	is alpha	' Report Format line
+reportOutput	is alpha	' Report Output Line
+	' DST Information
+skipDST		is alpha	' Skip flag
+dstNumber	is binary	' DST Number assigned
+shortName	is alpha	' DST Short Name
+description	is alpha	' DST Descritpion
+sensitivity	is binary	' DST Sensitivity
+dbNumber	is binary	' Logical Database Number
+dstType		is alpha	' DST Type
+dstEdit		is binary	' DST Edit Number
+dstLength	is binary	' DST Length
+dstDCT		is binary	' DST DCT Number (If dstEdit = 1)
+dstRecord	is binary	' DST Record Number
+dstPicture	is alpha	' DST Picture format
+dstLeft		is binary	' DST Left digits
+dstRight	is binary	' DST Right digits
+dstRecode	is alpha	' DST Recode table Name
+altIndex	is binary	' DST Alternate index number
+'================================================
+' Initalize Variables
+'------------------------------------------------
+dstsAdded	= 0
+dstsSkipped	= 0
+dstsWithErrors	= 0
+' Do we have a file name
+if filename !DP then
+	' Prompt for a file name
+	$openwin(1, 1, 24, 1, 80)
+	$disp("Filename:", 5,5)
+	$acpt(filename, 5, 15, 73)
+	$closewin(1)
+	if filename !DP then
+		$infomsg1 = "Exiting...No import file"
+		return
+	endif
+endif
+' Is is a file
+if $checkfile(filename) > 0 then
+	$errmsg1 = "Unable to find file: " + filename
+	return
+endif
+' Try to get an available file handle
+dstFile = $fileavail()		' Get an available file handle
+if dstFile = 0 then
+	$errmsg1 = "Unable to get a file handle"
+	return
+endif
+' Try to open the file
+retCode = $openfile(dstFile, filename, "I")
+if retCode > 0 then
+	$errmsg1 = $format(retCode, "Unable to open the file (99)")
+else
+	' Prep for report output
+	reportNbr = $reportavail()		' Get available report handle
+	$clear(reportHdrs[])
+	reportHdrs[1]	= "Name:" + $scriptid + "^C^^ORG^^R^Page:^PAGE^"
+	reportHdrs[2]	= "Date:^DATE^^C^DSTs import report^R^Time:^TIME^"
+	reportHdrs[3]	= ""
+	reportHdrs[4]	= "DST#  ShortName      Description               Sen DB Type Edit Length DCT# Record  Pic   Recode    Alt Message"
+	reportformat	= "ZZZZ9 L~~~~~~~~~~~ L~~~~~~~~~~~~~~~~~~~~~~~~~~~ 9  Z9  L~  ZZZ9   Z9   ZZZZ  ZZZZZ  L~~ L~~~~~~~~~~  Z  L~~~~~~~"
+	' create the report
+	retCode = $report(reportNbr, reportTitle, reportHdrs[])
+	if retCode > 0 then
+		$errmsg1 = $format(retCode, "Unable to create a report (99)")
+		return
+	endif
+
+	' Loop through the lines in the file
+	retCode = $readfile(dstFile, dstLine)
+	do while retCode = 0
+		' break out the DST Info
+		$clear(info[], Errors[])
+		(void) $parsem(dstLine,,"|",info[])
+		' Try to get the info
+		skipDST		= info[1]
+		dstNumber	= $num(info[2])	' DST Number assigned
+		shortName	= info[3]	' DST Short Name
+		description	= info[4]	' DST Descritpion
+		sensitivity	= $num(info[5])	' DST Sensitivity
+		dbNumber	= $num(info[6])	' Logical Database Number
+		dstType		= $charx(info[7],1)' DST Type
+		if dstType = "R" then	dstType = "H"	endif	' Fix Record Header Types
+		dstEdit		= $num(info[8])	' DST Edit Number
+		dstLength	= $num(info[9])	' DST Length
+		if dstEdit = 1 then
+			dstDCT = $num(info[10])	' DST DCT Number (If dstEdit = 1)
+		else
+			$clear(dstDCT)
+		endif
+		dstRecord	= $num(info[11])' DST Record Number
+		dstRecode	= info[13]	' DST Recode table Name
+		altIndex	= $num(info[14])' DST Alternate index number
+		' Numeric needs special handling
+		if dstType = "N" then
+			(void) $parsem( info[12],,".", info[])
+			dstLeft		= $num(info[1])	' Digits to the left of decimal
+			dstRight	= $num(info[2])	' Digits to the right of decimal
+			dstPicture	= $format(dstLeft, "9.") + $format(dstRight,"Z")
+		else
+			$clear(dstPicture, dstLeft, dstRight)
+		endif
+		'-------------------------------------
+		' Edit Check the DST Information
+		'-------------------------------------
+		if dstNumber = 0 then	(void) $arrpush(Errors[], "DST Number is missing")	endif
+		if shortName = "" then	(void) $arrpush(Errors[], "DST Short Name is missing")	endif
+		if sensitivity > 9 then	(void) $arrpush(Errors[], "DST Sensitivity error")	endif
+		if dbNumber < 2 or dbnumber > 99 then
+			(void) $arrpush(Errors[], "Invalid dbfile value (<2 or > 99)")
+		endif
+		if altIndex < 0	or altIndex > 3 then
+			(void) $arrpush(Errors[], "Alternate index must be 1-3")
+		endif
+		if dstLeft > 9 then	(void) $arrpush(Errors[], "Digits left of decimal must be less than 10")	endif
+		if dstRight > 3 then	(void) $arrpush(Errors[], "Digits right of decimal must be less than 3")	endif
+		if $find(dstType,"XHBNTD") = 0 then	(void) $arrpush(Errors[], "Invalid type (not X, H, B, N, T, or D)")	endif
+		'-------------------------------------
+		' Check for existing dst w/ short name
+		'-------------------------------------
+		if shortName DP then
+			retCode = $dstinfo(shortName, info[])
+			if retCode = 0 then
+				if skipDST !DP then
+					skipDST = "DST already in the system"
+					(void) $arrpush(Errors[], skipDST)
+				endif
+				' Compaire the fields
+				if dstNumber != $num(info[1]) then
+					errorMsg = "Found " + info[1] + " with the same short name"
+					(void) $arrpush(Errors[], errorMsg)
+				endif
+				if description != info[3] then
+					errorMsg = "DST Description is different (" + info[3] + ")"
+					(void) $arrpush(Errors[], errorMsg)
+				endif
+				if dbNumber != $num(info[4]) then
+					errorMsg = "Found dst in database " + info[4]
+					(void) $arrpush(Errors[], errorMsg)
+				endif
+				if dstType != info[5] then
+					errorMsg = "DST type is different (" + info[5] + ")"
+					(void) $arrpush(Errors[], errorMsg)
+				endif
+				if dstEdit != $num(info[6]) then
+					errorMsg = "DST Edit is different (" + info[6] + ")"
+					(void) $arrpush(Errors[], errorMsg)
+				endif
+				if dstlength != $num(info[7]) then
+					errorMsg = "DST Length is different (" + info[7] + ")"
+					(void) $arrpush(Errors[], errorMsg)
+				endif
+				if  dstEdit = 1	and dstDCT != $num(info[8]) then
+					errorMsg = "DST edits against different DCT (" + info[8] + ")"
+					(void) $arrpush(Errors[], errorMsg)
+                                endif
+				if  dstType = "N" then
+					if dstLeft != $num(info[10]) then
+						errorMsg = "Number of digits to the left is different (" + info[10] + ")"
+						(void) $arrpush(Errors[], errorMsg)
+					endif
+					if dstRight != $num(info[11]) then
+						errorMsg = "Number of digits to the right is different (" + info[11] + ")"
+						(void) $arrpush(Errors[], errorMsg)
+					endif
+				endif
+				if altIndex != $num(info[12]) then
+					errorMsg = "Alternate Index (" + info[12] + ") does not match"
+					(void) $arrpush(Errors[], errorMsg)
+				endif
+				if dstRecode != info[13] then
+					errorMsg = "Recode table (" + info[13] + ") does not match"
+					(void) $arrpush(Errors[], errorMsg)
+				endif
+				if sensitivity != $num(info[17]) then
+					errorMsg = "Sensitivity (" + info[17] + ") does not match"
+					(void) $arrpush(Errors[], errorMsg)
+				endif
+			elseif skipDST DP then
+				(void) $arrpush(Errors[], "DST missing from the System")
+			endif
+			$clear(retCode)		' clear the error code.
+		else
+			skipDST = "Missing Name"
+		endif
+		'-------------------------------------
+		' We need to add the DST to the system
+		'-------------------------------------
+		if skipDST !DP then
+			$nextavdst = dstNumber
+			retCode = $dstAdd( dstAssigned, shortName, description, dbNumber, dstType, dstEdit, dstLength,
+						dstDCT, dstRecord, dstLeft, dstRight, altIndex, dstRecode, sensitivity)
+			if retCode > 0 then
+				select retCode
+				  case 1	(void) $arrpush(Errors[], "DST number variable error, or no number available")
+				  case 2	(void) $arrpush(Errors[], "Keyname already used in the DST file")
+				  case 3	(void) $arrpush(Errors[], "Invalid dbfile value (<2 or > 99)")
+				  case 4	(void) $arrpush(Errors[], "Invalid type (not X, H, B, N, T, or D)")
+				  case 5	(void) $arrpush(Errors[], "Invalid edit (not 1 - 23 or 102 - 199)")
+				  case 6	(void) $arrpush(Errors[], "Invalid len value")
+				  case 7	(void) $arrpush(Errors[], "Table required for edit value 1 (or table not allowed if edit isn't 1)")
+				  case 8	(void) $arrpush(Errors[], "DCT specified in table not found")
+				  case 9	(void) $arrpush(Errors[], "For type code H, recnum already in use")
+				  case 10	(void) $arrpush(Errors[], "The digleft and/or digright arguments are required for type code N (or not allowed for other type codes)")
+				  case 11	(void) $arrpush(Errors[], "Invalid alt-index code (must be 1, 2, or 3)")
+				  case 12	(void) $arrpush(Errors[], "Data sensitivity level value is invalid (must be 0 - 9)")
+				endselect
+				(void) $arrpush(Errors[], "ERROR: *** DST Not added ***")
+				dstsWithErrors++
+				errorMsg = "ERROR"
+			else
+				dstsAdded++
+				errorMsg = "ADDED"
+			endif
+		else
+			dstsSkipped++
+			errorMsg = " SKIPPED"
+		endif
+		' Show the DST Information
+		'DST#  ShortName      Description               Sen DB Type Edit Length DCT# Record  Pic   Recode    Alt Message"
+		'ZZZZ9 L~~~~~~~~~~~ L~~~~~~~~~~~~~~~~~~~~~~~~~~~ 9  Z9  L~  ZZZ9   Z9   ZZZZ  ZZZZZ  L~~ L~~~~~~~~~~  Z  L~~~~~~"
+		' Show the DST Info collected
+		reportOutput = $format( dstNumber, shortName, description, sensitivity, dbNumber,
+					dstType, dstEdit, dstLength, dstDCT, dstRecord, dstPicture,
+					dstRecode, altIndex, errorMsg, reportFormat)
+		(void) $print(reportNbr, reportOutput)
+		'-------------------------------------
+		' Show the Errors
+		'-------------------------------------
+		i = 0
+		do while i++ < $maxarray( Errors[])
+			(void) $print(reportNbr, Errors[i])
+		enddo
+		' Get the Next Line
+		retCode = $readfile(dstFile, dstLine)
+	enddo
+	' Check for Errors
+	select retCode
+	  case 2	$errmsg2 = "The file wasn't opened "
+	  case 3	$errmsg2 = "Invalid file handle (either not previously assigned as a handle or zero)"
+	  case 4	$errmsg2 = "Other I/O exception occurred"
+	  		$errmsg3 = "$filestat = " + $filestat
+	endselect
+endif
+
+(void) $closefile(dstFile)
+
+(void) $print(reportNbr, "")	' blank line
+reportOutput = $format(dstsAdded,      "    DSTs Added: ZZZZ9")
+(void) $print(reportNbr, reportOutput)
+$infomsg1 = reportOutput
+
+reportOutput = $format(dstsSkipped,    "  DSTs Skipped: ZZZZ9")
+(void) $print(reportNbr, reportOutput)
+$infomsg2 = reportOutput
+
+reportOutput = $format(dstsWithErrors, "DSTs w/ Errors: ZZZZ9")
+(void) $print(reportNbr, reportOutput)
+$infomsg3 = reportOutput
+
+(void) $closereport(reportNbr)
+
+end import-dsts
