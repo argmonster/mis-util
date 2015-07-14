@@ -6,8 +6,8 @@ var Ftp = require('./libs/Ftp.js');
 
 var defaults = {
    importdir: '/c1/import',
-   dstscript: './usc/import-dsts.usc',
-   compilescript: './usc/compile'
+   dstscript: __dirname + '/usc/import-dsts.usc',
+   compilescript: __dirname + '/usc/compile'
 };
 var settings = {};
 

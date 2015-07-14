@@ -1,4 +1,5 @@
 var fs = require('fs');
+var path = require('path');
 var Q = require('q');
 var ftp = require('ftp');
 
@@ -49,7 +50,7 @@ var put = function put(f, local_file, remote_dir, filename) {
    
    .then(function() {
 
-      f.put(local_file, filename, function(err) { 
+      f.put(path.resolve(local_file), filename, function(err) { 
          if (err) { 
             console.log(err); 
             dfd.reject(err); 
