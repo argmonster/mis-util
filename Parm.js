@@ -2,9 +2,9 @@ var fs = require('fs');
 var Q = require('q');
 var _ = require('lodash');
 
-var add_line = require('./add_line.js');
-var process_parm_values = require('./process_parm_values.js');
-var json_obj_to_arr = require('./json_obj_to_arr.js');
+var add_line = require('./libs/add_line.js');
+var process_parm_values = require('./libs/process_parm_values.js');
+var json_obj_to_arr = require('./libs/json_obj_to_arr.js');
 
 var readfile = Q.nfbind(fs.readFile);
 var writefile = Q.nfbind(fs.writeFile);

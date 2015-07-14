@@ -1,6 +1,6 @@
 var _ = require('lodash');
 
-var Ftp = require('./Ftp.js');
+var Ftp = require('./lib/Ftp.js');
 
 var defaults = {
    usc_extension: 'usc',
