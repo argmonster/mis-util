@@ -53,8 +53,8 @@ var put_script_parm = function put_script_parm(conn, sysname, parmpath, script) 
    return dfd.promise;
 };
 
-var rm_script_parm = function rm_script_parm(conn, sysname, parmpath, parmname) {
-   var cmd = "rm " + sysname + parmpath + "/" + parmname;
+var rm_file = function rm_file(conn, sysname, filepath, filename) {
+   var cmd = "rm " + sysname + filepath + "/" + filename;
    return execute(conn, cmd);
 };
 
@@ -90,6 +90,15 @@ module.exports = {
          return close(conn);
       })
    },
+   removefile: function(connectsettings, sysname, path, filename) {
+      return connect(connectsettings)
+      .then(function(conn) {
+         return rm_file(conn, sysname, path, filename);
+      })
+      .then(function(conn) {
+         return close(conn);
+      });
+   },
    runscript: function(connectsettings, sysname, parmpath, user, pass, scripts) {
       scripts = scripts instanceof Array ? scripts : [scripts];
       return connect(connectsettings)
@@ -101,7 +110,7 @@ module.exports = {
                console.log('execute parm ', parm);
                return exec_uscript(conn, sysname, user, pass, parm)
             .then(function(conn) {
-               return rm_script_parm(conn, sysname, parmpath, parm);
+               return rm_file(conn, sysname, parmpath, parm);
             });
             });
          });
