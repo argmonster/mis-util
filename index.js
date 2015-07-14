@@ -1,7 +1,7 @@
 var _ = require('lodash');
-var Deploy = require('./Deploy/Deploy.js');
-var Parm = require('./Parm/Parm.js');
-var Script = require('./Scripts/Script.js');
+var Deploy = require('./Deploy.js');
+var Parm = require('./Parm.js');
+var Script = require('./Script.js');
 
 var defaults = {
    connect: {
