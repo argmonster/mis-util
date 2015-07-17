@@ -136,5 +136,7 @@ module.exports = function(options) {
          }
       }
    };
+   api.installcompile = api.installexecutable.bind(api, settings.compilescript);
+   api.uninstallcompile = api.uninstallexecutable.bind(api, 'compile');
    return api;
 };
