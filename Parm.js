@@ -22,10 +22,55 @@ var mapjson = function mapjson(json) {
    }));
 };
 
+var parse_dstlist = function parse_dstlist(data) {
+   return data.replace(/\s*[\r\n]$/,'')
+      .split(/\n\r?/m).map(function(r) { 
+      var cols = r.replace(/\s*[\n\r]/,'').split('|');
+      return {
+         system: cols[0],
+         number: parseInt(cols[1], 10),
+         shortname: cols[2].replace(/\s*$/, ''),
+         description: cols[3].replace(/\s*$/, ''),
+         sensitivity: cols[4],
+         database: parseInt(cols[5], 10),
+         type: cols[6],
+         edit: parseInt(cols[7], 10),
+         length: parseInt(cols[8], 10),
+         dct: parseInt(cols[9], 10),
+         record: parseInt(cols[10], 10),
+         picture: cols[11],
+         recode: cols[12],
+         alternate: cols[13]
+      };
+   });
+}
+
 var Parm = function Parm(options) {
    settings = _.merge(defaults, options);
 
    return {
+      dstlisttojson: function dstlisttojson(path) { 
+         return readfile(path, 'utf-8')
+         .then(parse_dstlist)
+      },
+      dstjsontoparm: function dstjsontoparm(options, data) { 
+         console.log('to parm', options);
+         return Q([].concat.apply([], data.map(function(dst, idx) {
+            return options.map(function(opt) {
+               console.log(opt, dst, idx)
+               //var val = (dst[opt.dstfield] || '').replace(opt.from, opt.to);
+               var val = dst[opt.dstfield];
+               if (val) { 
+                  val = opt.parmname + '-' + idx + ' ' + val;
+               } else {
+                  val = null;
+               }
+               return val;
+               //return opt.parmname + '-' + idx + ' ' + dst[opt.dstfield].replace(opt.from, opt.to);
+            }).filter(function(item) { console.log('filter: ', item); return item !== null; });
+
+         })));
+      },
       fromflatfile: function fromfile(path) {
          var self = this;
          return readfile(path, 'utf-8').then(function(data) { 
@@ -49,7 +94,13 @@ var Parm = function Parm(options) {
          });
       },
       tofile: function tofile(path, data) {
-         return writefile(path, data.join(''))
+         return writefile(path, data.map(function(line) {
+               if (line.substr(0,1) === '*') {
+                  return add_line(line);
+               }
+               var l = line.split(' ');
+               return add_line(l.shift(), l.join(' '));
+         }).join(''))
          .then(function() {
             console.log('Parm written to: ', path);
          })
