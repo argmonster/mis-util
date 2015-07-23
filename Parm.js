@@ -75,11 +75,12 @@ var Parm = function Parm(options) {
          var self = this;
          return readfile(path, 'utf-8').then(function(data) { 
             return Q(data.split(/\n\r?/m).map(function(line) {
-               if (line.substr(0,1) === '*') {
-                  return add_line(line);
-               }
-               var l = line.split(' ');
-               return add_line(l.shift(), l.join(' '));
+               return line;
+               //if (line.substr(0,1) === '*') {
+               //   return add_line(line);
+               //}
+               //var l = line.split(' ');
+               //return add_line(l.shift(), l.join(' '));
             }));
          });
       },
