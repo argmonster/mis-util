@@ -54,10 +54,8 @@ var Parm = function Parm(options) {
          .then(parse_dstlist)
       },
       dstjsontoparm: function dstjsontoparm(options, data) { 
-         console.log('to parm', options);
          return Q([].concat.apply([], data.map(function(dst, idx) {
             return options.map(function(opt) {
-               console.log(opt, dst, idx)
                //var val = (dst[opt.dstfield] || '').replace(opt.from, opt.to);
                var val = dst[opt.dstfield];
                if (val) { 
@@ -67,7 +65,7 @@ var Parm = function Parm(options) {
                }
                return val;
                //return opt.parmname + '-' + idx + ' ' + dst[opt.dstfield].replace(opt.from, opt.to);
-            }).filter(function(item) { console.log('filter: ', item); return item !== null; });
+            }).filter(function(item) { return item !== null; });
 
          })));
       },
