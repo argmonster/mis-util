@@ -55,6 +55,7 @@ var Parm = function Parm(options) {
       },
       dstjsontoparm: function dstjsontoparm(options, data) { 
          return Q([].concat.apply([], data.map(function(dst, idx) {
+            idx += 1 //make the array indexed from 1 not 0
             return options.map(function(opt) {
                //var val = (dst[opt.dstfield] || '').replace(opt.from, opt.to);
                var val = dst[opt.dstfield];
